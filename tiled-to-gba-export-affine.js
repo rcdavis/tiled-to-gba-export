@@ -42,7 +42,7 @@ function decimalToHex(p_decimal, p_padding) {
         .padStart(p_padding, "0");
 }
 
-const customMapFormat = {
+tiled.registerMapFormat("gba-affine", {
     name: "GBA source files - affine",
     extension: "c *.h",
     write: function(p_map, p_fileName) {
@@ -129,6 +129,4 @@ const customMapFormat = {
 
         console.timeEnd("Export completed in");
     }
-}
-
-tiled.registerMapFormat("gba-affine", customMapFormat)
+});
