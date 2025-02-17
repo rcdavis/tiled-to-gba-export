@@ -56,7 +56,7 @@ function decimalToHex(p_decimal, p_padding) {
         .padStart(p_padding, "0");
 }
 
-const customMapFormat = {
+tiled.registerMapFormat("gba", {
     name: "GBA source files - regular",
     extension: "c *.h",
     write: function(p_map, p_fileName) {
@@ -81,12 +81,13 @@ const customMapFormat = {
         const tilemapLength = p_map.width * p_map.height;
 
         // Header defines
-        var headerFileData = "#ifndef "+fileBaseName.toUpperCase()+"_H\n";
-        headerFileData += "#define "+fileBaseName.toUpperCase()+"_H\n\n";
+        var headerFileData = "#ifndef _"+fileBaseName.toUpperCase()+"_H_\n";
+        headerFileData += "#define _"+fileBaseName.toUpperCase()+"_H_\n\n";
 
         headerFileData += "#define "+fileBaseName.toUpperCase()+"_WIDTH  ("+p_map.width+")\n";
         headerFileData += "#define "+fileBaseName.toUpperCase()+"_HEIGHT ("+p_map.height+")\n";
         headerFileData += "#define "+fileBaseName.toUpperCase()+"_LENGTH ("+tilemapLength+")\n\n";
+        headerFileData += "#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n";
 
         var sourceFileData = "#include \""+fileBaseName+".h\"\n\n";
 
@@ -150,6 +151,7 @@ const customMapFormat = {
             sourceFileData = sourceFileData.slice(0,-3) + "\n};\n\n";
         }
 
+        headerFileData += "\n#ifdef __cplusplus\n}\n#endif\n";
         headerFileData += "\n#endif\n";
 
         // Remove the second newline at the end of the source file
@@ -169,6 +171,4 @@ const customMapFormat = {
 
         console.timeEnd("Export completed in");
     }
-}
-
-tiled.registerMapFormat("gba", customMapFormat)
+});

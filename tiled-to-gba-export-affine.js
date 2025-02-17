@@ -65,11 +65,12 @@ const customMapFormat = {
 
         const tilemapLength = p_map.width * p_map.height;
 
-        var headerFileData = "#ifndef "+fileBaseName.toUpperCase()+"_H\n";
-        headerFileData += "#define "+fileBaseName.toUpperCase()+"_H\n\n";
+        var headerFileData = "#ifndef _"+fileBaseName.toUpperCase()+"_H_\n";
+        headerFileData += "#define _"+fileBaseName.toUpperCase()+"_H_\n\n";
         headerFileData += "#define "+fileBaseName.toUpperCase()+"_WIDTH  ("+p_map.width+")\n";
         headerFileData += "#define "+fileBaseName.toUpperCase()+"_HEIGHT ("+p_map.height+")\n";
         headerFileData += "#define "+fileBaseName.toUpperCase()+"_LENGTH ("+tilemapLength+")\n\n";
+        headerFileData += "#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n";
 
         var sourceFileData = "#include \""+fileBaseName+".h\"\n\n";
 
@@ -108,6 +109,7 @@ const customMapFormat = {
             }
         }
 
+        headerFileData += "\n#ifdef __cplusplus\n}\n#endif\n";
         headerFileData += "\n#endif\n";
 
         // Remove the second newline at the end of the source file
