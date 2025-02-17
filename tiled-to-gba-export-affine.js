@@ -6,11 +6,12 @@
  * use as affine tiled backgrounds.
  *
  * Valid affine map sizes are 16x16, 32x32, 64x64 and 128x128.
- * 
+ *
  * Each tile layer is converted to a C array of hexadecimal tile IDs - blank
  * tiles are defaulted to 0x0000.
  *
  * Copyright (c) 2020 Jay van Hutten
+ * Copyright (c) 2025 Ren Davis
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -18,10 +19,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,26 +30,22 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  */
 
 /* global FileInfo, TextFile, tiled */
 
 function decimalToHex(p_decimal, p_padding) {
-    var hexValue = (p_decimal)
+    return "0x" + p_decimal
         .toString(16)
         .toUpperCase()
         .padStart(p_padding, "0");
-
-    return "0x"+hexValue;
 }
 
-var customMapFormat = {
+tiled.registerMapFormat("gba-affine", {
     name: "GBA source files - affine",
     extension: "c *.h",
-    write:
-
-    function(p_map, p_fileName) {
+    write: function(p_map, p_fileName) {
         console.time("Export completed in");
 
         // Only allow valid map sizes to be parsed
@@ -60,29 +57,28 @@ var customMapFormat = {
         }
 
         // Split full filename path into the filename (without extension) and the directory
-        var fileBaseName = FileInfo.completeBaseName(p_fileName).replace(/[^a-zA-Z0-9-_]/g, "_");
+        const fileBaseName = FileInfo.completeBaseName(p_fileName).replace(/[^a-zA-Z0-9-_]/g, "_");
         var filePath = FileInfo.path(p_fileName)+"/";
 
         // Replace the ‘/’ characters in the file path for ‘\’ on Windows
         filePath = FileInfo.toNativeSeparators(filePath);
 
-        var tilemapLength = p_map.width * p_map.height;
+        const tilemapLength = p_map.width * p_map.height;
 
-        var headerFileData = "";
-        headerFileData += "#ifndef "+fileBaseName.toUpperCase()+"_H\n";
-        headerFileData += "#define "+fileBaseName.toUpperCase()+"_H\n\n";
+        var headerFileData = "#ifndef _"+fileBaseName.toUpperCase()+"_H_\n";
+        headerFileData += "#define _"+fileBaseName.toUpperCase()+"_H_\n\n";
         headerFileData += "#define "+fileBaseName.toUpperCase()+"_WIDTH  ("+p_map.width+")\n";
         headerFileData += "#define "+fileBaseName.toUpperCase()+"_HEIGHT ("+p_map.height+")\n";
         headerFileData += "#define "+fileBaseName.toUpperCase()+"_LENGTH ("+tilemapLength+")\n\n";
+        headerFileData += "#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n";
 
-        var sourceFileData = "";
-        sourceFileData += "#include \""+fileBaseName+".h\"\n\n";
+        var sourceFileData = "#include \""+fileBaseName+".h\"\n\n";
 
         for (let i = 0; i < p_map.layerCount; ++i) {
-            let currentLayer = p_map.layerAt(i);
+            const currentLayer = p_map.layerAt(i);
 
             // Replace special characters for an underscore
-            let currentLayerName = currentLayer.name.replace(/[^a-zA-Z0-9-_]/g, "_");
+            const currentLayerName = currentLayer.name.replace(/[^a-zA-Z0-9-_]/g, "_");
 
             headerFileData += "extern const unsigned short "+currentLayerName+"["+tilemapLength+"];\n";
 
@@ -95,7 +91,7 @@ var customMapFormat = {
                     sourceFileData += "    ";
 
                     for (let x = 0; x < p_map.width; ++x) {
-                        let currentTileID = currentLayer.cellAt(x, y).tileId;
+                        const currentTileID = currentLayer.cellAt(x, y).tileId;
 
                         // Default to 0x0000 for blank tiles
                         if (currentTileID == "-1") {
@@ -113,25 +109,24 @@ var customMapFormat = {
             }
         }
 
+        headerFileData += "\n#ifdef __cplusplus\n}\n#endif\n";
         headerFileData += "\n#endif\n";
 
         // Remove the second newline at the end of the source file
         sourceFileData = sourceFileData.slice(0,-1);
 
         // Write header data to disk
-        var headerFile = new TextFile(filePath+fileBaseName+".h", TextFile.WriteOnly);
+        const headerFile = new TextFile(filePath+fileBaseName+".h", TextFile.WriteOnly);
         headerFile.write(headerFileData);
         headerFile.commit();
         console.log("Tilemap exported to "+filePath+fileBaseName+".h");
 
         // Write source data to disk
-        var sourceFile = new TextFile(filePath+fileBaseName+".c", TextFile.WriteOnly);
+        const sourceFile = new TextFile(filePath+fileBaseName+".c", TextFile.WriteOnly);
         sourceFile.write(sourceFileData);
         sourceFile.commit();
         console.log("Tilemap exported to "+filePath+fileBaseName+".c");
 
         console.timeEnd("Export completed in");
     }
-}
-
-tiled.registerMapFormat("gba-affine", customMapFormat)
+});
