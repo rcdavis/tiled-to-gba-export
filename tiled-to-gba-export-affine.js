@@ -46,8 +46,6 @@ tiled.registerMapFormat("gba-affine", {
     name: "GBA source files - affine",
     extension: "c *.h",
     write: function(p_map, p_fileName) {
-        console.time("Export completed in");
-
         // Only allow valid map sizes to be parsed
         if (!((p_map.width == 16 && p_map.height == 16)
             || (p_map.width == 32 && p_map.height == 32)
@@ -65,14 +63,15 @@ tiled.registerMapFormat("gba-affine", {
 
         const tilemapLength = p_map.width * p_map.height;
 
-        var headerFileData = "#ifndef _"+fileBaseName.toUpperCase()+"_H_\n";
-        headerFileData += "#define _"+fileBaseName.toUpperCase()+"_H_\n\n";
-        headerFileData += "#define "+fileBaseName.toUpperCase()+"_WIDTH  ("+p_map.width+")\n";
-        headerFileData += "#define "+fileBaseName.toUpperCase()+"_HEIGHT ("+p_map.height+")\n";
-        headerFileData += "#define "+fileBaseName.toUpperCase()+"_LENGTH ("+tilemapLength+")\n\n";
+        var headerFileData = `#ifndef _${fileBaseName.toUpperCase()}_H_\n`;
+        headerFileData += `#define _${fileBaseName.toUpperCase()}_H_\n\n`;
+
+        headerFileData += `#define ${fileBaseName.toUpperCase()}_WIDTH ${p_map.width}\n`;
+        headerFileData += `#define ${fileBaseName.toUpperCase()}_HEIGHT ${p_map.height}\n`;
+        headerFileData += `#define ${fileBaseName.toUpperCase()}_LENGTH ${tilemapLength}\n\n`;
         headerFileData += "#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n";
 
-        var sourceFileData = "#include \""+fileBaseName+".h\"\n\n";
+        var sourceFileData = `#include \"${fileBaseName}.h\"\n\n`;
 
         for (let i = 0; i < p_map.layerCount; ++i) {
             const currentLayer = p_map.layerAt(i);
@@ -80,9 +79,9 @@ tiled.registerMapFormat("gba-affine", {
             // Replace special characters for an underscore
             const currentLayerName = currentLayer.name.replace(/[^a-zA-Z0-9-_]/g, "_");
 
-            headerFileData += "extern const unsigned short "+currentLayerName+"["+tilemapLength+"];\n";
+            headerFileData += `extern const unsigned short ${currentLayerName}[${tilemapLength}];\n`;
 
-            sourceFileData += "const unsigned short "+currentLayerName+"["+tilemapLength+"] __attribute__((aligned(4))) =\n";
+            sourceFileData += `const unsigned short ${currentLayerName}[${tilemapLength}] __attribute__((aligned(4))) =\n`;
             sourceFileData += "{\n";
 
             if (currentLayer.isTileLayer) {
@@ -105,7 +104,7 @@ tiled.registerMapFormat("gba-affine", {
                 }
 
                 // Remove the last comma and close the array.
-                sourceFileData = sourceFileData.slice(0,-3)+"\n};\n\n";
+                sourceFileData = `${sourceFileData.slice(0, -3)}\n};\n\n`;
             }
         }
 
@@ -119,14 +118,12 @@ tiled.registerMapFormat("gba-affine", {
         const headerFile = new TextFile(filePath+fileBaseName+".h", TextFile.WriteOnly);
         headerFile.write(headerFileData);
         headerFile.commit();
-        console.log("Tilemap exported to "+filePath+fileBaseName+".h");
+        tiled.log(`Tilemap exported to ${filePath}${fileBaseName}.h`);
 
         // Write source data to disk
         const sourceFile = new TextFile(filePath+fileBaseName+".c", TextFile.WriteOnly);
         sourceFile.write(sourceFileData);
         sourceFile.commit();
-        console.log("Tilemap exported to "+filePath+fileBaseName+".c");
-
-        console.timeEnd("Export completed in");
+        tiled.log(`Tilemap exported to ${filePath}${fileBaseName}.c`);
     }
 });

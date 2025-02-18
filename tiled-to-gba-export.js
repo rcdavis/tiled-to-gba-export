@@ -60,8 +60,6 @@ tiled.registerMapFormat("gba", {
     name: "GBA source files - regular",
     extension: "c *.h",
     write: function(p_map, p_fileName) {
-        console.time("Export completed in");
-
         // Only allow valid map sizes to be parsed
         if (p_map.width % 32 != 0 || p_map.height % 32 != 0) {
             return "Export failed: Invalid map size! Map width and height must be a multiple of 32.";
@@ -81,15 +79,15 @@ tiled.registerMapFormat("gba", {
         const tilemapLength = p_map.width * p_map.height;
 
         // Header defines
-        var headerFileData = "#ifndef _"+fileBaseName.toUpperCase()+"_H_\n";
-        headerFileData += "#define _"+fileBaseName.toUpperCase()+"_H_\n\n";
+        var headerFileData = `#ifndef _${fileBaseName.toUpperCase()}_H_\n`;
+        headerFileData += `#define _${fileBaseName.toUpperCase()}_H_\n\n`;
 
-        headerFileData += "#define "+fileBaseName.toUpperCase()+"_WIDTH  ("+p_map.width+")\n";
-        headerFileData += "#define "+fileBaseName.toUpperCase()+"_HEIGHT ("+p_map.height+")\n";
-        headerFileData += "#define "+fileBaseName.toUpperCase()+"_LENGTH ("+tilemapLength+")\n\n";
+        headerFileData += `#define ${fileBaseName.toUpperCase()}_WIDTH ${p_map.width}\n`;
+        headerFileData += `#define ${fileBaseName.toUpperCase()}_HEIGHT ${p_map.height}\n`;
+        headerFileData += `#define ${fileBaseName.toUpperCase()}_LENGTH ${tilemapLength}\n\n`;
         headerFileData += "#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n";
 
-        var sourceFileData = "#include \""+fileBaseName+".h\"\n\n";
+        var sourceFileData = `#include \"${fileBaseName}.h\"\n\n`;
 
         for (let i = 0; i < p_map.layerCount; ++i) {
             const currentLayer = p_map.layerAt(i);
@@ -97,9 +95,9 @@ tiled.registerMapFormat("gba", {
             // Replace special characters for an underscore
             const currentLayerName = currentLayer.name.replace(/[^a-zA-Z0-9-_]/g, "_");
 
-            headerFileData += "extern const unsigned short "+currentLayerName+"["+tilemapLength+"];\n";
+            headerFileData += `extern const unsigned short ${currentLayerName}[${tilemapLength}];\n`;
 
-            sourceFileData += "const unsigned short "+currentLayerName+"["+tilemapLength+"] __attribute__((aligned(4))) =\n";
+            sourceFileData += `const unsigned short ${currentLayerName}[${tilemapLength}] __attribute__((aligned(4))) =\n`;
             sourceFileData += "{\n";
 
             const screenBlockCountX = currentLayer.width / SCREENBLOCKWIDTH;
@@ -109,7 +107,7 @@ tiled.registerMapFormat("gba", {
             if (currentLayer.isTileLayer) {
                 for (let j = 0; j < screenBlockCountY; ++j) {
                     for (let k = 0; k < screenBlockCountX; ++k) {
-                        sourceFileData += "    // Screenblock "+screenBlockID+"\n";
+                        sourceFileData += `    // Screeblock ${screenBlockID}\n`;
                         screenBlockID++;
 
                         for (let y = 0; y < SCREENBLOCKHEIGHT; ++y) {
@@ -148,7 +146,7 @@ tiled.registerMapFormat("gba", {
             }
 
             // Remove the last comma and close the array.
-            sourceFileData = sourceFileData.slice(0,-3) + "\n};\n\n";
+            sourceFileData = `${sourceFileData.slice(0, -3)}\n};\n\n`;
         }
 
         headerFileData += "\n#ifdef __cplusplus\n}\n#endif\n";
@@ -161,14 +159,12 @@ tiled.registerMapFormat("gba", {
         const headerFile = new TextFile(filePath+fileBaseName+".h", TextFile.WriteOnly);
         headerFile.write(headerFileData);
         headerFile.commit();
-        console.log("Tilemap exported to "+filePath+fileBaseName+".h");
+        tiled.log(`Tilemap exported to ${filePath}${fileBaseName}.h`);
 
         // Write source data to disk
         const sourceFile = new TextFile(filePath+fileBaseName+".c", TextFile.WriteOnly);
         sourceFile.write(sourceFileData);
         sourceFile.commit();
-        console.log("Tilemap exported to "+filePath+fileBaseName+".c");
-
-        console.timeEnd("Export completed in");
+        tiled.log(`Tilemap exported to ${filePath}${fileBaseName}.c`);
     }
 });
